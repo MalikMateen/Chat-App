@@ -1,75 +1,51 @@
-const express = require('express');
-const cors = require("cors");
-const http = require('http');
-const { Server } = require('socket.io');
-
+const express = require("express");
 const app = express();
-app.use(cors())
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
+
+app.use(cors());
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST'],
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
   },
 });
 
-// Store message history for each room
-const messageHistory = {};
-
-io.on('connection', (socket) => {
-  console.log('A user connected');
-
-  socket.on('joinRoom', (room) => {
+io.on("connection", (socket) => {
+  socket.on("join_room", (room) => {
     socket.join(room);
     socket.room = room;
-    // Notify room members about new user
-    socket.to(room).emit('userJoined', socket.id);
-    
-    // Send message history to newly joined user
-    if (messageHistory[room]) {
-      socket.emit('messageHistory', messageHistory[room]);
-    }
+    socket.to(room).emit("user_joined", socket.id);
   });
 
-  socket.on('sendMessage', (message) => {
-    const { room } = socket;
-    // Store message in history
-    if (!messageHistory[room]) {
-      messageHistory[room] = [];
-    }
-    messageHistory[room].push(message);
-    // Keep message history limited to 10 messages
-    if (messageHistory[room].length > 10) {
-      messageHistory[room].shift();
-    }
-    // Broadcast message to room members
-    socket.to(room).emit('message', message);
-  });
-
-  socket.on('sendPrivateMessage', ({ recipient, message }) => {
-    // Send private message to specific recipient
-    socket.to(recipient).emit('privateMessage', {
-      sender: socket.id,
-      message
-    });
-  });
-
-  socket.on('typing', () => {
-    // Broadcast typing indicator to room members
-    socket.to(socket.room).emit('userTyping', socket.id);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('A user disconnected');
+  socket.on("leave_room", () => {
     const { room } = socket;
     if (room) {
-      // Notify room members about user leaving
-      socket.to(room).emit('userLeft', socket.id);
+      socket.leave(room);
+      socket.to(room).emit("user_left", socket.id);
+    }
+  });
+
+  socket.on("send_message", (data) => {
+    const { room, message } = data;
+    io.to(room).emit("receive_message", { room, userId: socket.id, message });
+  });
+
+  socket.on("typing", () => {
+    socket.to(socket.room).emit("user_typing", socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    const { room } = socket;
+    if (room) {
+      socket.to(room).emit("user_disconnect", socket.id);
     }
   });
 });
 
 server.listen(3001, () => {
-  console.log('Server is running on port 3001');
+  console.log("Server is running on port 3001");
 });
