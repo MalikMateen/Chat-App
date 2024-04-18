@@ -1,4 +1,4 @@
-"use-client"
+"use client"
 
 import React from 'react';
 import io from 'socket.io-client';
@@ -10,6 +10,8 @@ export const ChatScreen = React.memo(function ChatScreen() {
     const [inputMessage, setInputMessage] = React.useState('');
     const [room, setRoom] = React.useState('general');
     const [typingUsers, setTypingUsers] = React.useState<any[]>([]);
+
+    console.log('messages: ',messages)
   
     React.useEffect(() => {
       // Join default room when component mounts
@@ -17,6 +19,7 @@ export const ChatScreen = React.memo(function ChatScreen() {
   
       // Listen for incoming messages
       socket.on('message', (message) => {
+        console.log('message: ',message)
         setMessages((prevMessages) => [...prevMessages, message]);
       });
   
@@ -49,7 +52,7 @@ export const ChatScreen = React.memo(function ChatScreen() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
-       <h1>Chat App</h1>
+       <h1>Chat App by Muhammad Mateen</h1>
       <div>
         <select onChange={(e) => setRoom(e.target.value)}>
           <option value="general">General</option>
