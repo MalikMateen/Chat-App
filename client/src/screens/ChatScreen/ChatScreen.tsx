@@ -53,6 +53,8 @@ export const ChatScreen = React.memo(function ChatScreen() {
     });
 
     return () => {
+      socket.off("leave_group_room");
+      socket.off("join_group_room");
       socket.off("receive_message");
       socket.off("user_joined_group");
       socket.off("user_left_group");
@@ -131,7 +133,8 @@ export const ChatScreen = React.memo(function ChatScreen() {
           {groupMessages?.[selectedRoom] &&
             groupMessages[selectedRoom].slice(-10).map((data, index) => (
               <li key={index}>
-                <b>{data.userId}:</b> {data.message}
+                <b>{`${data.userId === socket?.id ? "You" : data.userId}`}:</b>{" "}
+                {data.message}
               </li>
             ))}
         </ul>
