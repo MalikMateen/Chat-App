@@ -15,27 +15,38 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("join_room", (room) => {
+  socket.on("join_group_room", (room) => {
     socket.join(room);
     socket.room = room;
-    socket.to(room).emit("user_joined", socket.id);
+    socket
+      .to(room)
+      .emit("user_joined_group", { userId: socket.id, roomId: room });
   });
 
-  socket.on("leave_room", () => {
+  socket.on("leave_group_room", () => {
     const { room } = socket;
     if (room) {
       socket.leave(room);
-      socket.to(room).emit("user_left", socket.id);
+      socket
+        .to(room)
+        .emit("user_left_group", { userId: socket.id, roomId: room });
     }
   });
 
-  socket.on("send_message", (data) => {
+  socket.on("send_message_to_room", (data) => {
     const { room, message } = data;
-    io.to(room).emit("receive_message", { room, userId: socket.id, message });
+    io.to(room).emit("receive_message", {
+      roomId: room,
+      userId: socket.id,
+      message,
+    });
   });
 
-  socket.on("typing", () => {
-    socket.to(socket.room).emit("user_typing", socket.id);
+  socket.on("typing_in_room", (data) => {
+    const { room, message } = data;
+    socket
+      .to(room)
+      .emit("group_typing", { roomId: room, userId: socket.id, message });
   });
 
   socket.on("disconnect", () => {
